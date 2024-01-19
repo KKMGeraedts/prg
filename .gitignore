@@ -2,6 +2,9 @@
 # vscode
 .vscode
 
+# data dir
+prg/data/*
+
 # python cache
 __pycache__
 
