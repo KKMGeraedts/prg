@@ -51,9 +51,9 @@ class PRG():
         #np.array(X_list), np.array(clusters_list), np.array(coupling_parameters)
 
         if method == "pairwise_clustering_bialek":
-            self.Xs, self.clusters, self.couplings = pairwise_clustering_bialek.real_space_rg(self.X, rg_iterations)
+            self.Xs, self.clusters = pairwise_clustering_bialek.real_space_rg(self.X, rg_iterations)
         elif method == "random":
-            self.Xs, self.clusters, self.couplings = random_pairwise_clustering.real_space_rg(self.X, rg_iterations)
+            self.Xs, self.clusters = random_pairwise_clustering.real_space_rg(self.X, rg_iterations)
         elif method == "RBM":
             print("Not implemented error.")
         else: 
@@ -61,7 +61,7 @@ class PRG():
                     "'pairwise_highest_correlated, 'random' or 'RBM'")
 
     def extract_data(self):
-        return self.Xs, self.clusters, self.couplings
+        return self.Xs, self.clusters
 
     def list_methods(self):
         print("Possible ways to perform the Renormalization group are:")

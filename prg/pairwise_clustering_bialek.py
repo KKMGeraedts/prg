@@ -15,9 +15,6 @@ def real_space_rg(X, steps, test=False):
         if len(X_coarse) == 1:
             return np.array(X_list), np.array(clusters_list), np.array(coupling_parameters)
 
-        # Compute couplings
-        # coupling_parameters.append(compute_couplings(X_coarse))
-
         # Compute correlation
         correlation = np.corrcoef(X_coarse)
 
@@ -31,7 +28,7 @@ def real_space_rg(X, steps, test=False):
         clusters = add_to_clusters(clusters, pairings)
         clusters_list.append(np.array(clusters))
 
-    return np.array(X_list, dtype=object), np.array(clusters_list, dtype=object), np.array(coupling_parameters, dtype=object)
+    return np.array(X_list, dtype=object), np.array(clusters_list, dtype=object)
 
 def real_space_rg_iteration(X, correlation, test=False):
     """
