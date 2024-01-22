@@ -3,7 +3,7 @@
 .vscode
 
 # data dir
-prg/data/*
+prg/data/datasets/*
 
 # python cache
 __pycache__

@@ -1,12 +1,15 @@
+import time
+
+import pandas as pd
 import numpy as np
-from .data_cleaning import *
+import matplotlib.pyplot as plt
+
+from .data.dataset_checks import check_dataset
+from .data.read import read_input
 from . import pairwise_clustering_bialek
 from . import random_pairwise_clustering
-import matplotlib.pyplot as plt
-import time
-import pandas as pd
 
-class RGObject():
+class PRG():
 
     def __init__(self):
         self.X = []
