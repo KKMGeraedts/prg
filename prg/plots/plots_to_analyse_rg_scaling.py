@@ -373,7 +373,7 @@ def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity
 
     return fig, ax
 
-def plot_scaling_of_moments(X_coarse, clusters, moments=[2], limits=True, fit=False, figsize=(10,6)):
+def plot_scaling_of_moments(X_coarse, clusters, moments=[2], limits=True, fit=False, ax=None):
     """
     We know that if we add to RV together their variance can be computed by Var(X+Y) = Var(X) + Var(Y) + 2Cov(X, Y). If we can assume Var(x)=Var(Y) then
     adding K uncorrelated RVs we get a scaling of the variance with K^1. On the other hand if the RVs are maximally correlated then one would expect
@@ -388,7 +388,8 @@ def plot_scaling_of_moments(X_coarse, clusters, moments=[2], limits=True, fit=Fa
     Return:
         a - scaling found in the coarse-graining procedure
     """
-    fig, ax = plt.subplots(1, figsize=figsize)
+    if ax == None:
+        fig, ax = plt.subplots(1, 1)
     x = []
     y = []
     yerr = []
@@ -410,11 +411,6 @@ def plot_scaling_of_moments(X_coarse, clusters, moments=[2], limits=True, fit=Fa
 
             # Compute moment
             n_moment = moment(X, moment=n_th_moment, axis=1) # These are the central moments
-            
-            plt.figure(figsize=(8, 7))
-            plt.plot(range(len(n_moment)), n_moment)
-            plt.xlabel("cluster i")
-            plt.ylabel("moment")
 
             # Compute mean
             moment_avgs.append(n_moment.mean())
@@ -425,21 +421,12 @@ def plot_scaling_of_moments(X_coarse, clusters, moments=[2], limits=True, fit=Fa
             bootstrap_values = [np.random.choice(n_moment, size=(len(n_moment))).mean() for _ in range(N)]
             confidence_interval = [np.percentile(bootstrap_values, percentile), np.percentile(bootstrap_values, 100-percentile)]
             confidence_intervals[i] = np.abs(moment_avgs[i] - confidence_interval)
-
-            # if i == 0:
-            #     y.append(moment_avgs[0])
-            #     yerr.append(3*np.array(moment_stds[0]))
         
-        # # Compute log errors for plot
-        # with np.errstate(invalid='ignore'):
-        #     moment_stds = moment_stds / np.abs(moment_avgs)
-
         # Plot moments along with error
         #ax.plot(cluster_sizes, moment_avgs, "^", label=f"n = {n_th_moment}")
         ax.errorbar(cluster_sizes, moment_avgs, confidence_intervals.T, markersize=5, fmt="o", color="black", alpha=0.8)#, label=f"n = {n_th_moment}", elinewidth=2)
 
         a = moment_avgs[0] # This is used for the limits
-        
         # Fit power law
         if fit == True:
             
@@ -470,9 +457,3 @@ def plot_scaling_of_moments(X_coarse, clusters, moments=[2], limits=True, fit=Fa
     ax.set_yscale("log")
     ax.set_xscale("log")
     ax.legend()
-
-    # plt.scatter(moments[::-1], y)
-    # plt.title("Central Moments")
-    # plt.plot
-
-    return fig, ax
