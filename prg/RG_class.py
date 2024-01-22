@@ -67,7 +67,6 @@ class PRG():
         print("Possible ways to perform the Renormalization group are:")
         print(" - 'random': this does a random pairwise clustering at eacht step.")
         print(" - 'pairwise_clustering_bialek': this does a pairwise clustering of the highest correlated variables.")
-        print(" - 'RBM': this trains a set of Restricted Boltzmann Machines at each RG transformation.")
         return 
 
     def plot_correlation_structure_in_dataset(self, X=None, return_hist=False):
@@ -168,8 +167,9 @@ class PRG():
             p_confidence_intervals - Confidence interval around the average probability. Shape(..) = (unique_activity_values, unique_activity_values)
             unique_activity_values - Unique activity values. Shape(..) = (unique_activity_values)
         """
-        # Check that some coarse-grianing has happened
-        if self.Xs == []:
+        # Check that coarse-grianing has happened
+
+        if not self.Xs:
             print("self.Xs == []. I.e. no coarse-graining has been performed. Try running self.perform_real_space_coarse_graining first.")
             return -1
 
