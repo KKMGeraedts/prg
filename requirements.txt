@@ -24,7 +24,7 @@ pexpect==4.9.0
 pillow==10.2.0
 platformdirs==4.1.0
 plotly==5.18.0
-prg @ git+https://github.com/KKMGeraedts/prg.git@20939ded6a1aca8ac6b6d48e6ba43ff60b4daeaa
+prg @ git+https://github.com/KKMGeraedts/prg.git@9aa2c551cfbf86b74bf88edd3c1032b916af76cd
 prompt-toolkit==3.0.43
 psutil==5.9.7
 ptyprocess==0.7.0
@@ -34,6 +34,7 @@ pyparsing==3.1.1
 python-dateutil==2.8.2
 pytz==2023.3.post1
 pyzmq==25.1.2
+scipy==1.12.0
 seaborn==0.13.1
 six==1.16.0
 stack-data==0.6.3

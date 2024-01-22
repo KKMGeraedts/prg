@@ -373,7 +373,7 @@ def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity
 
     return fig, ax
 
-def plot_scaling_of_moments(X_coarse, clusters, moments=[2], limits=True, fit=False, ax=None):
+def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=False, ax=None):
     """
     We know that if we add to RV together their variance can be computed by Var(X+Y) = Var(X) + Var(Y) + 2Cov(X, Y). If we can assume Var(x)=Var(Y) then
     adding K uncorrelated RVs we get a scaling of the variance with K^1. On the other hand if the RVs are maximally correlated then one would expect
@@ -393,63 +393,60 @@ def plot_scaling_of_moments(X_coarse, clusters, moments=[2], limits=True, fit=Fa
     x = []
     y = []
     yerr = []
-    for n_th_moment in moments[::-1]:
+    # Things to keep track of
+    moment_avgs = []
+    confidence_intervals = np.empty(shape=(len(X_coarse), 2))
+    cluster_sizes = []
 
-        # Things to keep track of
-        moment_avgs = []
-        confidence_intervals = np.empty(shape=(len(X_coarse), 2))
-        cluster_sizes = []
+    # Loop over RGTs
+    for i, X in enumerate(X_coarse):
 
-        # Loop over RGTs
-        for i, X in enumerate(X_coarse):
+        # Compute cluster size and save
+        cluster_size = len(clusters[0]) / len(clusters[i])
+        cluster_sizes.append(cluster_size)
 
-            # Compute cluster size and save
-            cluster_size = len(clusters[0]) / len(clusters[i])
-            cluster_sizes.append(cluster_size)
+        X = X * cluster_size # Unnormalize the activity
 
-            X = X * cluster_size # Unnormalize the activity
+        # Compute moment
+        n_moment = moment(X, moment=moment, axis=1) # These are the central moments
 
-            # Compute moment
-            n_moment = moment(X, moment=n_th_moment, axis=1) # These are the central moments
+        # Compute mean
+        moment_avgs.append(n_moment.mean())
 
-            # Compute mean
-            moment_avgs.append(n_moment.mean())
+        # Compute confidence interval by bootstrap
+        N = 1000
+        percentile = 2.5 
+        bootstrap_values = [np.random.choice(n_moment, size=(len(n_moment))).mean() for _ in range(N)]
+        confidence_interval = [np.percentile(bootstrap_values, percentile), np.percentile(bootstrap_values, 100-percentile)]
+        confidence_intervals[i] = np.abs(moment_avgs[i] - confidence_interval)
+    
+    # Plot moments along with error
+    ax.errorbar(cluster_sizes, moment_avgs, confidence_intervals.T, markersize=5, fmt="o", color="black", alpha=0.8)
 
-            # Compute confidence interval by bootstrap
-            N = 1000
-            percentile = 2.5 
-            bootstrap_values = [np.random.choice(n_moment, size=(len(n_moment))).mean() for _ in range(N)]
-            confidence_interval = [np.percentile(bootstrap_values, percentile), np.percentile(bootstrap_values, 100-percentile)]
-            confidence_intervals[i] = np.abs(moment_avgs[i] - confidence_interval)
+    a = moment_avgs[0] # This is used for the limits
+    # Fit power law
+    if fit == True:
         
-        # Plot moments along with error
-        #ax.plot(cluster_sizes, moment_avgs, "^", label=f"n = {n_th_moment}")
-        ax.errorbar(cluster_sizes, moment_avgs, confidence_intervals.T, markersize=5, fmt="o", color="black", alpha=0.8)#, label=f"n = {n_th_moment}", elinewidth=2)
+        # Fixed a
+        params, pcov = fit_power_law_fixed_a(cluster_sizes, moment_avgs)
+        params = list(params) + [moment_avgs[0]] # (b, a)
+        
+        # Varying a
+        #params = fit_power_law(cluster_sizes, moment_avgs)
+        a = params[1]
+        
+        print(f"Parameters of power law fit for {moment} order moment: {params}")
+        ax.plot(cluster_sizes, power_law(cluster_sizes, params[0], params[1]), "-", c="black", alpha=0.6, label=f"power law fit: $\\alpha$={params[0]:.2f}")
 
-        a = moment_avgs[0] # This is used for the limits
-        # Fit power law
-        if fit == True:
-            
-            # Fixed a
-            params, pcov = fit_power_law_fixed_a(cluster_sizes, moment_avgs)
-            params = list(params) + [moment_avgs[0]] # (b, a)
-            
-            # Varying a
-            #params = fit_power_law(cluster_sizes, moment_avgs)
-            a = params[1]
-            
-            print(f"Parameters of power law fit for {n_th_moment} order moment: {params}")
-            ax.plot(cluster_sizes, power_law(cluster_sizes, params[0], params[1]), "-", c="black", alpha=0.6, label=f"power law fit: $\\alpha$={params[0]:.2f}")
+    # Show limits 
+    if limits == True:
+        # # Plot K^1 limit (for variance)
+        limitK1 = a * np.array(cluster_sizes)
+        ax.plot(cluster_sizes, limitK1, "--", color="gray", alpha=0.5)
 
-        # Show limits 
-        if limits == True:
-            # # Plot K^1 limit (for variance)
-            limitK1 = a * np.array(cluster_sizes)
-            ax.plot(cluster_sizes, limitK1, "--", color="gray", alpha=0.5)
-
-            # # Plot K^2 limit (for variance)
-            limitK2 = a * np.array(cluster_sizes) ** n_th_moment
-            ax.plot(cluster_sizes, limitK2, "--", color="gray", alpha=0.5)
+        # # Plot K^2 limit (for variance)
+        limitK2 = a * np.array(cluster_sizes) ** moment
+        ax.plot(cluster_sizes, limitK2, "--", color="gray", alpha=0.5)
             
     # Make figure look nice
     ax.set_xlabel("cluster size K")
