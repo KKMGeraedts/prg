@@ -189,7 +189,6 @@ def plot_eigenvalue_scaling(X_coarse, clusters, rg_range=(0,0), ax=None):
     ax.set_xscale("log")
     ax.legend()
 
-    return fig, ax
 
 def plot_n_largest_eigenvectors(Xs, n, rg_range=(0,0)):
     """
