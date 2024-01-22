@@ -8,5 +8,10 @@ setup(
         long_description=open("README.md").read(),
         url="https://github.com/KKMGeraedts/prg",
         author="Karel Geraedts",
-        install_requires=[]
+        install_requires=[
+            "numpy>=1.26.3",
+            "matplotlib>=3.8.2",
+            "scipy>=1.12.0",
+            "pandas>=2.1.4"
+            ]
 )
