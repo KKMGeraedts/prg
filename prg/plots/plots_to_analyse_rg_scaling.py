@@ -138,7 +138,7 @@ def show_clusters_by_imshow(clusters, rg_range=(0,0)):
         #     fig.savefig(f"{OUTPUT_DIR}/clusterSize={len(c.T)}")
     return fig
 
-def plot_eigenvalue_scaling(X_coarse, clusters, rg_range=(0,0)):
+def plot_eigenvalue_scaling(X_coarse, clusters, rg_range=(0,0), ax=None):
     """
     Plot the eigenvalues spectrum of the Pearson correlation matrix at different steps of 
     coarse graining.
@@ -147,7 +147,8 @@ def plot_eigenvalue_scaling(X_coarse, clusters, rg_range=(0,0)):
         X_coarse - a list of arrays containing the activity of the orignal and coarse-grained variables. 
     """
     # Create fig, ax
-    fig, ax = plt.subplots(1)
+    if ax == None:
+        fig, ax = plt.subplots(1, 1)
 
     if rg_range != (0,0):
         X_coarse = X_coarse[rg_range[0]:rg_range[1]]
