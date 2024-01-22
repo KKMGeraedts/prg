@@ -1,1 +1,1 @@
-from RG_class import PRG
+from .RG_class import PRG
