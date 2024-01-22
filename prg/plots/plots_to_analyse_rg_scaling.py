@@ -2,7 +2,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 import math
-from scipy.stats import binom, moment
+from scipy.stats import binom
+from scipy.stats import moment as sp_moment
 import matplotlib.colors as mcolors
 from scipy.optimize import curve_fit
 import scipy.odr as odr
@@ -408,7 +409,7 @@ def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=False,
         X = X * cluster_size # Unnormalize the activity
 
         # Compute moment
-        n_moment = moment(X, moment=moment, axis=1) # These are the central moments
+        n_moment = sp_moment(X, moment=moment, axis=1) # These are the central moments
 
         # Compute mean
         moment_avgs.append(n_moment.mean())
