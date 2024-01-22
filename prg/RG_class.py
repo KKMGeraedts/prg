@@ -14,7 +14,7 @@ class PRG():
     def __init__(self):
         self.X = []
         self.N_spins = None
-        self.Xs = []
+        self.Xs = np.array([])
         self.clusters = []
         self.couplings = []
 
@@ -169,7 +169,7 @@ class PRG():
         """
         # Check that coarse-grianing has happened
 
-        if not self.Xs:
+        if self.Xs.size == 0:
             print("self.Xs == []. I.e. no coarse-graining has been performed. Try running self.perform_real_space_coarse_graining first.")
             return -1
 
