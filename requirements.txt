@@ -24,7 +24,7 @@ pexpect==4.9.0
 pillow==10.2.0
 platformdirs==4.1.0
 plotly==5.18.0
-prg @ git+https://github.com/KKMGeraedts/prg.git@4cbfafdefc43ed2ef9291becba7bc56fd4fffa45
+prg @ git+https://github.com/KKMGeraedts/prg.git@75e7b6faaab256700ffc311eb5d1083d33ca8863
 prompt-toolkit==3.0.43
 psutil==5.9.7
 ptyprocess==0.7.0
