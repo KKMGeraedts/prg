@@ -15,7 +15,7 @@ def read_input(input_file):
     elif input_file[-3:] == "dat":
         # Assuming .dat files contain at each row a binary string, eg. '00..01100'
         return np.genfromtxt(f"./{input_file}", delimiter=1, dtype=np.int8)
-    elif input_file[-3] == "txt":
+    elif input_file[-3:] == "txt":
         return read_wolffcpp_ising_data(input_file)
     else:
         raise Exception("FileExtensionError: make sure input file has extensions .npy, .txt or .dat")
