@@ -18,8 +18,7 @@ def read_input(input_file):
     elif input_file[-3] == "txt":
         return read_wolffcpp_ising_data(input_file)
     else:
-        print("Make sure input file has extensions .npy or .dat")
-        exit()
+        raise "FileExtensionError: make sure input file has extensions .npy, .txt or .dat"
 
 def read_wolffcpp_ising_data(input_file):
     lattice_configurations = []
