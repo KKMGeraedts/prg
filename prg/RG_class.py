@@ -12,7 +12,7 @@ from . import random_pairwise_clustering
 class PRG():
 
     def __init__(self):
-        self.X = []
+        self.X = np.array([])
         self.N_spins = None
         self.Xs = np.array([])
         self.clusters = []
@@ -86,7 +86,7 @@ class PRG():
         """
         # If no dataset was given check there is one available in self.
         if X == None:
-            if self.X == []:
+            if self.X.size == 0:
                 print(f"No dataset was given nor was any dataset loaded, i.e. self.X==None. Try running self.load_dataset() first.")
                 return -1
             else:
