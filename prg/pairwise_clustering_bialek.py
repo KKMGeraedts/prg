@@ -18,7 +18,7 @@ def real_space_rg(X, steps, test=False):
         # Compute correlation
         if type(X_coarse) == pd.DataFrame:
             correlation = X_coarse.corr()
-        elif type(X_coarse) == np.array
+        elif type(X_coarse) == np.array:
             correlation = np.corrcoef(X_coarse)
         else:
             raise Exception("Wrong type with type: {}".format(type(X_coarse)))
