@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 
 def real_space_rg(X, steps, test=False):
     """
