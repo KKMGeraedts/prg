@@ -295,7 +295,7 @@ def plot_eigenvalue_spectra_within_clusters(Xs, clusters, rg_range=(0,0)):
 
     return fig, ax
 
-def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity_values, clusters, individual_cluster_scaling=True):
+def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity_values, clusters, ax=None):
     """
     When a RG transformation is exact the free energy does not change. This function compute the free energy at each
     coarse-grained step and log plots the values. We hope to see some scaling with a power law close to 1.
@@ -305,6 +305,9 @@ def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity
     Parameters:
         X_list - nd numpy array containing the variables at different steps of the coarse-graining
     """
+    if ax == None:
+        fig, ax = plt.subplots(1, 1)
+
     # Data
     p0_avg = []
     p0_confidence_intervals = []
@@ -317,9 +320,6 @@ def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity
     # idx = np.argwhere(unique_activity_values[0] == 0.0)
     # limit100 = list(list(p_averages[0][idx])[0]) * len(unique_activity_values)
     # limit0 = (limit100) ** np.arange(1, len(unique_activity_values)+1)
-
-    # Create fig, ax
-    fig, ax = plt.subplots(1, figsize=(8, 7))
 
     for i, unique_vals in enumerate(unique_activity_values):
         # Find idx at which cluster is silent
@@ -355,7 +355,7 @@ def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity
     p0_confidence_intervals = -np.log(p0_confidence_intervals)
     
     # Fit power law
-    params = fit_power_law(cluster_sizes, p0_avg)
+    params, pcov = fit_power_law(cluster_sizes, p0_avg)
     print(f"Parameters of power law fit for free energy: {params}")
     
     # Plot fit
@@ -371,8 +371,6 @@ def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity
     plt.xscale("log")
     #plt.ylim(0, 1)
     plt.legend()
-
-    return fig, ax
 
 def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=True, fit_fixed_a=False, ax=None):
     """
