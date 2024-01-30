@@ -17,12 +17,7 @@ def real_space_rg(X, steps, test=False):
             return np.array(X_list), np.array(clusters_list), np.array(coupling_parameters)
 
         # Compute correlation
-        if type(X_coarse) == pd.DataFrame:
-            correlation = X_coarse.corr()
-        elif type(X_coarse) == np.ndarray:
-            correlation = np.corrcoef(X_coarse)
-        else:
-            raise Exception("Wrong type with type: {}".format(type(X_coarse)))
+        correlation = np.corrcoef(X_coarse)
 
         # RG iteration
         X_coarse, pairings = real_space_rg_iteration(X_coarse, correlation, test=test)

@@ -374,7 +374,7 @@ def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity
 
     return fig, ax
 
-def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=False, ax=None):
+def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=True, fit_fixed_a=False, ax=None):
     """
     We know that if we add to RV together their variance can be computed by Var(X+Y) = Var(X) + Var(Y) + 2Cov(X, Y). If we can assume Var(x)=Var(Y) then
     adding K uncorrelated RVs we get a scaling of the variance with K^1. On the other hand if the RVs are maximally correlated then one would expect
@@ -429,12 +429,13 @@ def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=False,
     if fit == True:
         
         # Fixed a
-        params, pcov = fit_power_law_fixed_a(cluster_sizes, moment_avgs)
-        params = list(params) + [moment_avgs[0]] # (b, a)
+		if fit_fixed_a == True:
+        	params, pcov = fit_power_law_fixed_a(cluster_sizes, moment_avgs)
+        	params = list(params) + [moment_avgs[0]] # (b, a)
         
         # Varying a
-        #params = fit_power_law(cluster_sizes, moment_avgs)
-        a = params[1]
+		else:
+        	params, pcov = fit_power_law(cluster_sizes, moment_avgs)
         
         print(f"Parameters of power law fit for {moment} order moment: {params}")
         ax.plot(cluster_sizes, power_law(cluster_sizes, params[0], params[1]), "-", c="black", alpha=0.6, label=f"power law fit: $\\alpha$={params[0]:.2f}")
