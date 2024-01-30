@@ -427,16 +427,14 @@ def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=True, 
     a = moment_avgs[0] # This is used for the limits
     # Fit power law
     if fit == True:
-        
-        # Fixed a
-		if fit_fixed_a == True:
-        	params, pcov = fit_power_law_fixed_a(cluster_sizes, moment_avgs)
-        	params = list(params) + [moment_avgs[0]] # (b, a)
-        
-        # Varying a
-		else:
-        	params, pcov = fit_power_law(cluster_sizes, moment_avgs)
-        
+        if fit_fixed_a == True:
+            # Fixed a
+            params, pcov = fit_power_law_fixed_a(cluster_sizes, moment_avgs)
+            params = list(params) + [moment_avgs[0]] # (b, a)
+        else:
+            # Varying a
+            params, pcov = fit_power_law(cluster_sizes, moment_avgs)
+            
         print(f"Parameters of power law fit for {moment} order moment: {params}")
         ax.plot(cluster_sizes, power_law(cluster_sizes, params[0], params[1]), "-", c="black", alpha=0.6, label=f"power law fit: $\\alpha$={params[0]:.2f}")
 
