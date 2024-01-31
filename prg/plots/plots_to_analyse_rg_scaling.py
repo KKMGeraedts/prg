@@ -105,7 +105,6 @@ def plot_normalized_activity(
     ax.set_yscale("log")
     #ax.set_ylim(0, 0.8)
 
-    return fig, ax
 
 def show_clusters_by_imshow(clusters, rg_range=(0,0)):
     """
