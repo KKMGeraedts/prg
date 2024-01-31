@@ -1,12 +1,16 @@
+import math
+from typing import List, Tuple
+
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.lines import Line2D
-import math
-from scipy.stats import binom
-from scipy.stats import moment as sp_moment
 import matplotlib.colors as mcolors
-from scipy.optimize import curve_fit
+from matplotlib.lines import Line2D
+from matplotlib.axes._axes import Axes
 import scipy.odr as odr
+from scipy.stats import binom
+from scipy.optimize import curve_fit
+from scipy.stats import moment as sp_moment
+
 
 # Power law function
 def power_law(x, b, a):
@@ -45,7 +49,16 @@ def fit_power_law(x, y):
 #     # Extract the parameters:
 #     return out.beta
 
-def plot_normalized_activity(p_averages, p_confidence_intervals, unique_activity_values, clusters, rg_range=(0,0), title="", binom_fit=False):
+def plot_normalized_activity(
+        p_averages: List[np.ndarray], 
+        p_confidence_intervals: List[np.ndarray], 
+        unique_activity_values: List[np.ndarray], 
+        clusters: np.ndarray, 
+        rg_range: Tuple[int, int] = (0,0), 
+        title: str = "", 
+        binom_fit: bool = False, 
+        ax: Axes = None
+        ):
     """
     Plots the distribution of the normalized activity. Given the average probabilities, standard deviations and the unique values at each
     step of the coarse-graining. This data can be obtained from the RG_class.
@@ -58,7 +71,8 @@ def plot_normalized_activity(p_averages, p_confidence_intervals, unique_activity
     cluster_sizes = [1] + [len(c[0]) for c in clusters[1:]]
 
     # Create fig, ax
-    fig, ax = plt.subplots(1)
+    if ax == None:
+        fig, ax = plt.subplots(1, 1)
     
     if rg_range != (0,0):
         cluster_sizes = cluster_sizes[rg_range[0]:rg_range[1]]
@@ -166,15 +180,7 @@ def plot_eigenvalue_scaling(X_coarse, clusters, rg_range=(0,0), ax=None):
         corr = np.corrcoef(X)
 
         # Compute its eigenvalues
-        eigvalues, eigvectors = np.linalg.eig(corr)
-
-        # Check complex part of eigenvalues
-        delta = 10e-3
-        large_complex_eigvalues = eigvalues.imag[eigvalues.imag > delta]
-        if large_complex_eigvalues != []:
-            print(f"Found some eigenvalues with complex part larger than {delta}. Ignoring them for now. {large_complex_eigvalues}")
-
-        eigvalues = eigvalues.real
+        eigvalues, eigvectors = np.linalg.eigh(corr)
 
         # Plot spectrum
         sort_idx = np.argsort(eigvalues)
