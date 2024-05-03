@@ -96,8 +96,8 @@ def plot_normalized_activity(
             ax.plot(x / n_trails, binom_pdf, '--', color="grey", alpha=0.3)
         
     # Make plot nice
-    ax.set_ylabel("probability")
-    ax.set_xlabel("normalized activity")
+    ax.set_ylabel("Probability")
+    ax.set_xlabel("Normalized activity")
     #ax.set_title("Probability distribution of the normalized activity")
     ax.grid(True)
     
@@ -140,7 +140,7 @@ def show_clusters_by_imshow(clusters, rg_range=(0,0)):
                 grid[j, c[i]] = color
         
         ax.imshow(grid, extent=(0, original_size, 0, original_size), origin="lower")
-        ax.set_title(f"cluster size = {len(c.T)}")
+        ax.set_title(f"Cluster size = {len(c.T)}")
 
         # Specify the x-axis and y-axis ticks
         ax.set_xticks(range(0, original_size+2, 2))
@@ -188,8 +188,8 @@ def plot_eigenvalue_scaling(X_coarse, clusters, rg_range=(0,0), ax=None):
         ax.plot(rank, eigvalues, "o", markersize=3, label=f"K = {cluster_sizes[i]}")#, c=u"#348ABD", alpha=alphas[i])
 
     # Make plot nice
-    ax.set_ylabel("eigenvalues")
-    ax.set_xlabel("rank/K")
+    ax.set_ylabel("Eigenvalues")
+    ax.set_xlabel("Rank/K")
     ax.set_yscale("log")
     ax.set_xscale("log")
     ax.legend()
@@ -292,8 +292,8 @@ def plot_eigenvalue_spectra_within_clusters(Xs, clusters, rg_range=(0,0)):
         # Plot
         ax.errorbar(rank, mean, yerr=confidence_intervals.T, fmt="o", markersize=3, label=f"K = {cluster_size}")
                 
-    ax.set_xlabel("rank/K")
-    ax.set_ylabel("eigenvalues")
+    ax.set_xlabel("Rank/K")
+    ax.set_ylabel("Eigenvalues")
     ax.set_yscale("log")
     ax.set_xscale("log")
     ax.legend()
@@ -369,7 +369,7 @@ def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity
     # Plot the probability of the cluster being silent
     p0_confidence_intervals = np.abs(np.transpose(p0_confidence_intervals) - p0_avg)  
     ax.errorbar(cluster_sizes, p0_avg, yerr=p0_confidence_intervals, color="black", fmt="o", markersize=5)
-    ax.set_xlabel("cluster size")
+    ax.set_xlabel("Cluster size")
     ax.set_ylabel(r"-log P$_{Silence}$")
     #ax.set_ylim(0, max(p0_avg)+0.1)
     plt.yscale("log")
@@ -452,8 +452,8 @@ def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=True, 
         ax.plot(cluster_sizes, limitK2, "--", color="gray", alpha=0.5)
             
     # Make figure look nice
-    ax.set_xlabel("cluster size K")
-    ax.set_ylabel("activity variance")
+    ax.set_xlabel("Cluster size K")
+    ax.set_ylabel("Activity variance")
     ax.set_yscale("log")
     ax.set_xscale("log")
     ax.legend()
