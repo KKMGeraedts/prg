@@ -22,7 +22,7 @@ def real_space_rg(X, steps, test=False):
         # RG iteration
         X_coarse, pairings = real_space_rg_iteration(X_coarse, correlation, test=test)
         
-	# Save data
+        # Save data
         X_list.append(X_coarse)
 
         # Add pairing to clusters
