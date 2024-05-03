@@ -227,7 +227,7 @@ def plot_n_largest_eigenvectors(Xs, n, rg_range=(0,0)):
         fig.suptitle(f"Cluster size: {N / len(X)}")
         plt.show()
 
-def plot_eigenvalue_spectra_within_clusters(Xs, clusters, rg_range=(0,0)):
+def plot_eigenvalue_spectra_within_clusters(Xs: List, clusters: List, rg_range: tuple = (0,0), ax: plt.Axes = None):
     """
     This function plots the eigenvalue spectra within the clusters. At each coarse-grained level the mean and variance of the spectra
     across the different clusters are computed and plotted.
@@ -239,11 +239,16 @@ def plot_eigenvalue_spectra_within_clusters(Xs, clusters, rg_range=(0,0)):
     original_dataset = Xs[0]
 
     if rg_range != (0,0):
-        Xs = Xs[rg_range[0]:rg_range[1]]
-        clusters = clusters[rg_range[0]:rg_range[1]]
+        if len(rg_range) == 1:
+            Xs = Xs[rg_range[0]:]
+            clusters = clusters[rg_range[0]:]
+        else:
+            Xs = Xs[rg_range[0]:rg_range[1]]
+            clusters = clusters[rg_range[0]:rg_range[1]]
 
     # Create figure and ax
-    fig, ax = plt.subplots(1)
+    if ax == None:
+        fig, ax = plt.subplots(1, 1, figsize=(7, 5))
 
     # Loop over coarse-graining iterations
     for i, cluster in enumerate(clusters):
@@ -265,7 +270,7 @@ def plot_eigenvalue_spectra_within_clusters(Xs, clusters, rg_range=(0,0)):
             if len(c) != cluster_size:
                 continue
             
-            corr = np.corrcoef(original_dataset[c])
+            corr = np.cov(original_dataset[c])
             eigvalues, _ = np.linalg.eig(corr)
             eigvalues_l.append(np.sort(eigvalues)[::-1])
          
@@ -285,12 +290,8 @@ def plot_eigenvalue_spectra_within_clusters(Xs, clusters, rg_range=(0,0)):
             confidence_intervals[j] = np.percentile(bootstrap_values, [percentile, 100-percentile])
             confidence_intervals[j] = np.abs(confidence_intervals[j] - mean[j])
     
-        # if cluster_size == 32:
-        #     print(np.array(eigvalues_l)[:, 1])
-        #     print(np.mean(np.array(eigvalues_l)[:, 1]))
-
         # Plot
-        ax.errorbar(rank, mean, yerr=confidence_intervals.T, fmt="o", markersize=3, label=f"K = {cluster_size}")
+        ax.errorbar(rank, mean, yerr=confidence_intervals.T, fmt="^", markersize=5, label=f"K = {cluster_size}")
                 
     ax.set_xlabel("Rank/K")
     ax.set_ylabel("Eigenvalues")
@@ -298,8 +299,7 @@ def plot_eigenvalue_spectra_within_clusters(Xs, clusters, rg_range=(0,0)):
     ax.set_xscale("log")
     ax.legend()
 
-    return fig, ax
-
+    
 def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity_values, clusters, ax=None):
     """
     When a RG transformation is exact the free energy does not change. This function compute the free energy at each
