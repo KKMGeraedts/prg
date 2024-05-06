@@ -17,11 +17,13 @@ class PRG():
         self.Xs = np.array([])
         self.clusters = []
         self.couplings = []
+        self._normalize = True
 
     def load_dataset(self, input_file, method="file"):
         """
         Load the dataset stored in location given by 'input_file'. The Dataset is then
-        stored as an attribute of the class in its self.X attribute.
+        stored as an attribute of the class in its self.X attribute. The _normalize parameter
+        is set to True by default. This is not necessary for binary variables.
 
         Parameters:
             input_file - a string containing the relative directory of the input file
@@ -30,13 +32,17 @@ class PRG():
         if method == "file":
             self.X = read_input(input_file)
             self.X = check_dataset(self.X.T)
+            if len(np.unique(self.X)) == 2:
+                self._normalize = False
         elif method == "data":
             self.X = input_file
             self.X = check_dataset(self.X.T)
+            if len(np.unique(self.X)) == 2:
+                self._normalize = False
         else: 
             print("Invalid method.")
 
-    def perform_real_space_coarse_graining(self, method, rg_iterations=5):
+    def perform_real_space_coarse_graining(self, method="pairwise_clustering_bialek", rg_iterations=5):
         """
         Performs a real space rg procedure given a chosen method. The possible methods are
         1) pairwise_clustering_bialek
@@ -51,9 +57,9 @@ class PRG():
         #np.array(X_list), np.array(clusters_list), np.array(coupling_parameters)
 
         if method == "pairwise_clustering_bialek":
-            self.Xs, self.clusters = pairwise_clustering_bialek.real_space_rg(self.X, rg_iterations)
+            self.Xs, self.clusters = pairwise_clustering_bialek.real_space_rg(self.X, rg_iterations, normalize=self._normalize)
         elif method == "random":
-            self.Xs, self.clusters = random_pairwise_clustering.real_space_rg(self.X, rg_iterations)
+            self.Xs, self.clusters = random_pairwise_clustering.real_space_rg(self.X, rg_iterations, normalize=self._normalize)
         elif method == "RBM":
             print("Not implemented error.")
         else: 
