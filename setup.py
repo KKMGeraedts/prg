@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
         name="prg",
-        version="0.1.2",
+        version="0.1.3",
         packages=find_packages(),
         description="Implementation of the Phenomenological Renormalization Group procedure.",
         long_description=open("README.md").read(),
