@@ -57,9 +57,9 @@ class PRG():
         #np.array(X_list), np.array(clusters_list), np.array(coupling_parameters)
 
         if method == "pairwise_clustering_bialek":
-            self.Xs, self.clusters = pairwise_clustering_bialek.real_space_rg(self.X, rg_iterations, normalize=self._normalize)
+            self.Xs, self.clusters = pairwise_clustering_bialek.real_space_rg(self.X, rg_iterations)
         elif method == "random":
-            self.Xs, self.clusters = random_pairwise_clustering.real_space_rg(self.X, rg_iterations, normalize=self._normalize)
+            self.Xs, self.clusters = random_pairwise_clustering.real_space_rg(self.X, rg_iterations)
         elif method == "RBM":
             print("Not implemented error.")
         else: 

@@ -272,7 +272,6 @@ def plot_eigenvalue_spectra_within_clusters(Xs: List, clusters: List, rg_range: 
             
             corr = np.cov(original_dataset[c])
             eigvalues, _ = np.linalg.eig(corr)
-            eigvalues = eigvalues / np.max(eigvalues) # Normalize so that the largest is always 1
             eigvalues_l.append(np.sort(eigvalues)[::-1])
          
         # Compute statistics
