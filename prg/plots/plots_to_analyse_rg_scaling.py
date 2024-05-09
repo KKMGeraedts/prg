@@ -106,7 +106,7 @@ def plot_normalized_activity(
     #ax.set_ylim(0, 0.8)
 
 
-def show_clusters_by_imshow(clusters, rg_range=(0,0)):
+def show_clusters_by_imshow(clusters: List, rg_range: tuple = (0,0)):
     """
     Show the clusters that are formed during the RG procedure.
 
@@ -151,7 +151,13 @@ def show_clusters_by_imshow(clusters, rg_range=(0,0)):
         #     fig.savefig(f"{OUTPUT_DIR}/clusterSize={len(c.T)}")
     return fig
 
-def plot_eigenvalue_scaling(X_coarse, clusters, rg_range=(0,0), ax=None):
+def plot_eigenvalue_scaling(
+        X_coarse: List,
+        clusters: List,
+        rg_range: tuple = (0,0), 
+        ax: plt.Axes = None, 
+        return_data: bool = False
+        ):
     """
     Plot the eigenvalues spectrum of the Pearson correlation matrix at different steps of 
     coarse graining.
@@ -194,6 +200,9 @@ def plot_eigenvalue_scaling(X_coarse, clusters, rg_range=(0,0), ax=None):
     ax.set_xscale("log")
     ax.legend()
 
+    if return_data == "True":
+        return rank, eigvalues
+
 
 def plot_n_largest_eigenvectors(Xs, n, rg_range=(0,0)):
     """
@@ -227,7 +236,13 @@ def plot_n_largest_eigenvectors(Xs, n, rg_range=(0,0)):
         fig.suptitle(f"Cluster size: {N / len(X)}")
         plt.show()
 
-def plot_eigenvalue_spectra_within_clusters(Xs: List, clusters: List, rg_range: tuple = (0,0), ax: plt.Axes = None):
+def plot_eigenvalue_spectra_within_clusters(
+        Xs: List, 
+        clusters: List, 
+        rg_range: tuple = (0,0), 
+        ax: plt.Axes = None,
+        return_data: bool = False,
+        ):
     """
     This function plots the eigenvalue spectra within the clusters. At each coarse-grained level the mean and variance of the spectra
     across the different clusters are computed and plotted.
@@ -251,6 +266,9 @@ def plot_eigenvalue_spectra_within_clusters(Xs: List, clusters: List, rg_range: 
         fig, ax = plt.subplots(1, 1, figsize=(7, 5))
 
     # Loop over coarse-graining iterations
+    ranks = []
+    means = []
+    confidence_intervals_l = []
     for i, cluster in enumerate(clusters):
 
         # Compute cluster size
@@ -292,12 +310,20 @@ def plot_eigenvalue_spectra_within_clusters(Xs: List, clusters: List, rg_range: 
     
         # Plot
         ax.errorbar(rank, mean, yerr=confidence_intervals.T, fmt="^", markersize=5, label=f"K = {cluster_size}")
+
+        # Store 
+        ranks.append(rank)
+        means.append(mean)
+        confidence_intervals_l.append(confidence_intervals)
                 
     ax.set_xlabel("Rank/K")
     ax.set_ylabel("Eigenvalues")
     ax.set_yscale("log")
     ax.set_xscale("log")
     ax.legend()
+
+    if return_data:
+        return ranks, means, confidence_intervals_l
 
     
 def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity_values, clusters, ax=None):
@@ -415,17 +441,25 @@ def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=True, 
         n_moment = sp_moment(X, moment=moment, axis=1) # These are the central moments
 
         # Compute mean
-        moment_avgs.append(n_moment.mean())
+        if moment % 2 == 1:
+            moment_avgs.append(np.abs(n_moment.mean()))
+        else:
+            moment_avgs.append(n_moment.mean())
 
-        # Compute confidence interval by bootstrap
-        N = 1000
-        percentile = 2.5 
-        bootstrap_values = [np.random.choice(n_moment, size=(len(n_moment))).mean() for _ in range(N)]
-        confidence_interval = [np.percentile(bootstrap_values, percentile), np.percentile(bootstrap_values, 100-percentile)]
-        confidence_intervals[i] = np.abs(moment_avgs[i] - confidence_interval)
+        # Standard (log) error of the mean
+        confidence_intervals[i] = [
+            n_moment.std() / (n_moment.mean() * len(n_moment)),
+            n_moment.std() / (n_moment.mean() * len(n_moment))
+            ]
     
     # Plot moments along with error
-    ax.errorbar(cluster_sizes, moment_avgs, confidence_intervals.T, markersize=5, fmt="o", color="black", alpha=0.8)
+    if moment % 2 == 1:
+        if (np.array(moment_avgs) > 0).any() and (np.array(moment_avgs) < 0).any():
+            print(f"The moments: {moment_avgs} are both negative and positive.")
+        ax.errorbar(cluster_sizes, np.abs(moment_avgs), np.abs(confidence_intervals.T), markersize=5, fmt="o", color="black", alpha=0.8)
+    else:
+        ax.errorbar(cluster_sizes, moment_avgs, confidence_intervals.T, markersize=5, fmt="o", color="black", alpha=0.8)
+
 
     a = moment_avgs[0] # This is used for the limits
     # Fit power law
