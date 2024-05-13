@@ -390,7 +390,14 @@ def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity
     print(f"Parameters of power law fit for free energy: {params}")
     
     # Plot fit
-    ax.plot(cluster_sizes, power_law(cluster_sizes, params[0], params[1]), "--", c="gray", alpha=0.5, label=f"power law fit: $\\alpha$={params[0]:.2f}")
+    ax.plot(
+        cluster_sizes,
+        power_law(cluster_sizes, params[0], params[1]), 
+        "--", 
+        c="gray", 
+        alpha=0.5, 
+        label=f"power law fit: $\\alpha$={params[0]:.2f}"
+        )
 
     # Plot the probability of the cluster being silent
     p0_confidence_intervals = np.abs(np.transpose(p0_confidence_intervals) - p0_avg)  
@@ -403,11 +410,20 @@ def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity
     #plt.ylim(0, 1)
     plt.legend()
 
-def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=True, fit_fixed_a=False, ax=None):
+def plot_scaling_of_moment(
+        X_coarse: List[List], 
+        clusters: List[List], 
+        moment: int = 2, 
+        limits: bool = True, 
+        fit: bool = True, 
+        fit_fixed_a: bool = False,
+        ax: plt.Axes = None, 
+        return_exponents: bool = False
+        ):
     """
-    We know that if we add to RV together their variance can be computed by Var(X+Y) = Var(X) + Var(Y) + 2Cov(X, Y). If we can assume Var(x)=Var(Y) then
-    adding K uncorrelated RVs we get a scaling of the variance with K^1. On the other hand if the RVs are maximally correlated then one would expect
-    a scaling with K^2 (Some assumptions were made here). 
+    We know that if we add to RV together their variance can be computed by Var(X+Y) = Var(X) + Var(Y) + 2Cov(X, Y). If Var(x)=Var(Y) then
+    adding K uncorrelated RVs we get a scaling of the variance with K^1. On the other hand if the RVs are maximally correlated then
+    the scaling will be K^2
     
     Here we plot the two limits, the scaling in the dataset and return the value a.
 
@@ -461,8 +477,8 @@ def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=True, 
         ax.errorbar(cluster_sizes, moment_avgs, confidence_intervals.T, markersize=5, fmt="o", color="black", alpha=0.8)
 
 
-    a = moment_avgs[0] # This is used for the limits
     # Fit power law
+    a = moment_avgs[0] # This is used for the limits
     if fit == True:
         if fit_fixed_a == True:
             # Fixed a
@@ -473,7 +489,14 @@ def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=True, 
             params, pcov = fit_power_law(cluster_sizes, moment_avgs)
             
         print(f"Parameters of power law fit for {moment} order moment: {params}")
-        ax.plot(cluster_sizes, power_law(cluster_sizes, params[0], params[1]), "-", c="black", alpha=0.6, label=f"power law fit: $\\alpha$={params[0]:.2f}")
+        ax.plot(
+            cluster_sizes,
+            power_law(cluster_sizes, params[0], params[1]), 
+            "-", 
+            c="black", 
+            alpha=0.6, 
+            label=f"power law fit: $\\alpha$={params[0]:.2f}"
+            )
 
     # Show limits 
     if limits == True:
@@ -491,3 +514,6 @@ def plot_scaling_of_moment(X_coarse, clusters, moment=2, limits=True, fit=True, 
     ax.set_yscale("log")
     ax.set_xscale("log")
     ax.legend()
+
+    if return_exponents:
+        return params, pcov
