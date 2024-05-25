@@ -412,7 +412,8 @@ def plot_scaling_of_moment(
         fit: bool = True, 
         fit_fixed_a: bool = False,
         ax: plt.Axes = None, 
-        return_exponents: bool = False
+        return_exponents: bool = False,
+        show_distributions: bool = False,
         ):
     """
     We know that if we add to RV together their variance can be computed by Var(X+Y) = Var(X) + Var(Y) + 2Cov(X, Y). If Var(x)=Var(Y) then
@@ -424,19 +425,25 @@ def plot_scaling_of_moment(
     Parameters:
         X_coarse - a list of size n_rg_iterations containing each a ndarray of size (n_variables, n_datapoints)
         clusters - a list of size n_rg_iterations containing the indices of the orignal spins that were clustered 
-
+        show_distributions - if true plot the distribution of moments at each step of the clustering
     Return:
         a - scaling found in the coarse-graining procedure
     """
     if ax == None:
         fig, ax = plt.subplots(1, 1)
-    x = []
-    y = []
-    yerr = []
+
     # Things to keep track of
     moment_avgs = []
+    moment_medians = []
     confidence_intervals = np.empty(shape=(len(X_coarse), 2))
     cluster_sizes = []
+    percentiles_16 = []
+    percentiles_84 = []
+    percentiles_2 = []
+    percentiles_97 = []
+
+    if show_distributions:
+        fig, tmp_axs = plt.subplots(len(X_coarse), 3, figsize=(18, len(X_coarse) * 6))
 
     # Loop over RGTs
     for i, X in enumerate(X_coarse):
@@ -448,27 +455,85 @@ def plot_scaling_of_moment(
         X = X * cluster_size # Unnormalize the activity
 
         # Compute moment
-        n_moment = sp_moment(X, moment=moment, axis=1) # These are the central moments
-
+        if moment % 2 == 1:
+            n_moment = np.abs(sp_moment(X, moment=moment, axis=1))
+        else:
+            n_moment = np.abs(sp_moment(X, moment=moment, axis=1))
+        median = np.median(n_moment)
+        mean = n_moment.mean()
         # Compute mean
         if moment % 2 == 1:
-            moment_avgs.append(np.abs(n_moment.mean()))
+            moment_avgs.append(np.abs(mean))
+            moment_medians.append(np.abs(median))
         else:
-            moment_avgs.append(n_moment.mean())
+            moment_avgs.append(mean)
+            moment_medians.append(median)
 
         # Standard (log) error of the mean
         confidence_intervals[i] = [
-            n_moment.std() / (n_moment.mean() * len(n_moment)),
-            n_moment.std() / (n_moment.mean() * len(n_moment))
+            mean - mean * np.power(10, -1 * n_moment.std() / (mean * len(n_moment))),
+            mean * np.power(10, n_moment.std() / (mean * len(n_moment))) - mean,
             ]
-    
+        
+        # We use the log scale to plot and so need log errors
+        dpercentile_2_97 = np.power((np.percentile(n_moment, [2.5, 97.5]) - median) / median, 10)
+        dpercentile_16_84 = np.power((np.percentile(n_moment, [16, 84]) - median) / median, 10)
+        percentiles_2.append(np.percentile(n_moment, [2.5, 97.5][0]))
+        percentiles_97.append(np.percentile(n_moment, [2.5, 97.5][1]))
+        percentiles_16.append(np.percentile(n_moment, [16, 84][0]))
+        percentiles_84.append(np.percentile(n_moment, [16, 84][1]))
+
+        if show_distributions:
+            tmp_axs[i][0].plot(range(len(n_moment)), np.sort(n_moment)[::-1], ".", label=f"RG iteration: {i}")
+            tmp_axs[i][0].axhline(n_moment.mean(), label="mean: {:.2f}".format(n_moment.mean()))
+            tmp_axs[i][0].axhline(n_moment.std(), alpha=0, label="std: {:.2f}".format(n_moment.std()))
+            tmp_axs[i][0].axhline(n_moment.std() / np.sqrt(len(n_moment)), alpha=0, label="ste: {:.2f}".format(n_moment.std() / np.sqrt(len(n_moment))))
+            tmp_axs[i][0].axhline(np.percentile(n_moment, [2.5, 97.5])[1], label="max: {:.2f}".format(np.percentile(n_moment, [2.5, 97.5])[1]))
+            tmp_axs[i][0].axhline(np.percentile(n_moment, [2.5, 97.5])[0], label="min: {:.2f}".format(np.percentile(n_moment, [2.5, 97.5])[0]))
+            tmp_axs[i][0].set_ylabel("Moment")
+            tmp_axs[i][0].set_xlabel("Cluster idx")
+            tmp_axs[i][0].legend()
+
+            tmp_axs[i][1].plot(np.log(range(len(n_moment))), np.log(np.sort(n_moment)[::-1]), ".", label=f"RG iteration: {i}")
+            tmp_axs[i][1].axhline(np.log(n_moment.mean()), label="mean: {:.2f}".format(n_moment.mean()))
+            tmp_axs[i][1].axhline(n_moment.std(), alpha=0, label="std: {:.2f}".format(n_moment.std()))
+            tmp_axs[i][1].axhline(n_moment.std() / np.sqrt(len(n_moment)), alpha=0, label="ste: {:.2f}".format(n_moment.std() / np.sqrt(len(n_moment))))
+            tmp_axs[i][1].axhline(np.log(percentiles_2[i]), color="C1", label="2.5")
+            tmp_axs[i][1].axhline(np.log(percentiles_16[i]), color="C2", label="16")
+            tmp_axs[i][1].axhline(np.log(percentiles_84[i]), color="C3", label="84")
+            tmp_axs[i][1].axhline(np.log(percentiles_97[i]), color="C4", label="97.5")
+            tmp_axs[i][1].set_ylabel("Moment")
+            tmp_axs[i][1].set_xlabel("Cluster idx")
+            tmp_axs[i][1].legend()
+
+            tmp_axs[i][2].plot(range(len(n_moment)), np.sort(n_moment)[::-1], ".", label=f"RG iteration: {i}")
+            tmp_axs[i][2].axhline(n_moment.mean(), label="mean: {:.2f}".format(n_moment.mean()))
+            tmp_axs[i][2].axhline(n_moment.std(), alpha=0, label="std: {:.2f}".format(n_moment.std()))
+            tmp_axs[i][2].axhline(n_moment.std() / np.sqrt(len(n_moment)), alpha=0, label="ste: {:.2f}".format(n_moment.std() / np.sqrt(len(n_moment))))
+            tmp_axs[i][2].axhline(percentiles_2[i], color="C1", label="2.5")
+            tmp_axs[i][2].axhline(percentiles_16[i], color="C2", label="16")
+            tmp_axs[i][2].axhline(percentiles_84[i], color="C3", label="84")
+            tmp_axs[i][2].axhline(percentiles_97[i], color="C4", label="97.5")
+            tmp_axs[i][2].set_ylabel("Moment")
+            tmp_axs[i][2].set_xlabel("Cluster idx")
+            tmp_axs[i][2].set_xscale("log")
+            tmp_axs[i][2].set_yscale("log")
+            tmp_axs[i][2].legend()
+
+
     # Plot moments along with error
     if moment % 2 == 1:
         if (np.array(moment_avgs) > 0).any() and (np.array(moment_avgs) < 0).any():
             print(f"The moments: {moment_avgs} are both negative and positive.")
-        ax.errorbar(cluster_sizes, np.abs(moment_avgs), np.abs(confidence_intervals.T), markersize=5, fmt="o", color="black", alpha=0.8)
+        ax.errorbar(cluster_sizes, np.abs(moment_avgs), np.abs(confidence_intervals.T), markersize=5, fmt="o", color="black", alpha=0.8, label="mean")
+        #ax.fill_between(cluster_sizes, percentiles_2, percentiles_97, color='b', alpha=0.1 ,label='2.5-97.5')
+        # ax.plot(cluster_sizes, np.abs(moment_medians), "^", markersize=5, color="red", label="median")
+        # ax.fill_between(cluster_sizes, percentiles_16, percentiles_84, color='b', alpha=0.2, label='16-84')
     else:
-        ax.errorbar(cluster_sizes, moment_avgs, confidence_intervals.T, markersize=5, fmt="o", color="black", alpha=0.8)
+        ax.errorbar(cluster_sizes, moment_avgs, confidence_intervals.T, markersize=5, fmt="o", color="black", alpha=0.8, label="mean")
+        # ax.plot(cluster_sizes, moment_medians, "^", markersize=5, color="red", label="median")
+        #ax.fill_between(cluster_sizes, percentiles_2, percentiles_97, color='b', alpha=0.1 ,label='2.5-97.5')
+        # ax.fill_between(cluster_sizes, percentiles_16, percentiles_84, color='b', alpha=0.2, label='16-84')
 
 
     # Fit power law
@@ -482,7 +547,6 @@ def plot_scaling_of_moment(
             # Varying a
             params, pcov = fit_power_law(cluster_sizes, moment_avgs)
             
-        print(f"Parameters of power law fit for {moment} order moment: {params}")
         ax.plot(
             cluster_sizes,
             power_law(cluster_sizes, params[0], params[1]), 
@@ -504,7 +568,7 @@ def plot_scaling_of_moment(
             
     # Make figure look nice
     ax.set_xlabel("Cluster size K")
-    ax.set_ylabel("Activity variance")
+    ax.set_ylabel(f"{moment} moment")
     ax.set_yscale("log")
     ax.set_xscale("log")
     ax.legend()
