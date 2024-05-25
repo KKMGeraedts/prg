@@ -289,27 +289,21 @@ def plot_eigenvalue_spectra_within_clusters(
                 continue
             
             corr = np.cov(original_dataset[c])
-            eigvalues, _ = np.linalg.eig(corr)
+            eigvalues, _ = np.linalg.eigh(corr)
             eigvalues_l.append(np.sort(eigvalues)[::-1])
          
         # Compute statistics
         rank = np.arange(1, len(eigvalues) + 1) / len(eigvalues)
         mean = np.mean(eigvalues_l, axis=0)
-        std = np.std(eigvalues_l, axis=0)
+        stds = np.std(eigvalues_l, axis=0)
 
-        # Bootstrap params
-        N = 1000
-        percentile = 2.5 # =(100-confidence)/2 
-        confidence_intervals = np.empty(shape=(len(eigvalues_l[0]), 2))
-
-        # Perform bootstrap for the confidence interval
-        for j, eigvs in enumerate(np.transpose(eigvalues_l)):
-            bootstrap_values = [np.random.choice(eigvs, size=len(eigvs), replace=True).mean() for i in range(N)]
-            confidence_intervals[j] = np.percentile(bootstrap_values, [percentile, 100-percentile])
-            confidence_intervals[j] = np.abs(confidence_intervals[j] - mean[j])
-    
+        confidence_intervals = [
+            mean - mean * np.power(10, -1 * stds  / (mean * len(eigvalues_l))),
+            mean * np.power(10, stds / (mean * len(eigvalues_l))) - mean,
+            ]
+        
         # Plot
-        ax.errorbar(rank, mean, yerr=confidence_intervals.T, fmt="^", markersize=5, label=f"K = {cluster_size}")
+        ax.errorbar(rank, mean, yerr=confidence_intervals, fmt="^", markersize=5, label=f"K = {cluster_size}")
 
         # Store 
         ranks.append(rank)
