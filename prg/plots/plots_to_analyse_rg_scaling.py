@@ -1,4 +1,5 @@
 import math
+from pathlib import Path
 from typing import List, Tuple
 
 import numpy as np
@@ -326,6 +327,66 @@ def plot_eigenvalue_spectra_within_clusters(
 
     if return_data:
         return ranks, means, confidence_intervals_l
+
+
+def fit_largest_eigenvalues(
+        ranks: List,
+        means: List,
+        n: int = 2,
+        rg_range_len: int = 4,
+        ax: plt.Axes = None,
+        fig_dir: str = None,
+):
+    """
+    Fit the eigenvalue to a power law based on their rank starting from the largest to lowest. 
+    A single eigenvalue is taken for each iteration of the PRG procedure.
+
+    :param ranks: list of the ranks for the eigenvalues 
+    :param means: list of the mean eigenvalue at each iteration
+    :param n: number of eigenvalues to fit
+    :param rg_range_len: PRG iterations
+    """
+    # Store two largest eigenvectors at each iteration in a separate list
+    eigenvalues = np.empty(shape=(2, rg_range_len))
+    new_ranks = np.empty(shape=(2, rg_range_len))
+    for i, mean in enumerate(means):
+        eigenvalues[:, i] = mean[:n]
+        new_ranks[:, i] = ranks[i][:n]
+
+    if ax == None:
+        fig, ax = plt.subplots(1, 1, figsize=(6, 5)) 
+    
+    # Fit power laws to the eigenvalues
+    colors = ["C{}".format(i) for i in range(rg_range_len)]
+    labels = [r"$\lambda_{}$"] * rg_range_len
+
+    params = []
+    pcovs = []
+    for i, row in enumerate(eigenvalues[:rg_range_len]):
+        # Fit a power law to the current row
+        x = new_ranks[i]
+        param, pcov = fit_power_law(x, row)
+        params.append(param)
+        pcovs.append(pcov)
+        y_fit = power_law(x, *param)
+        
+        # Plot the actual values and their power law fit
+        ax.plot(x, row, ".", c=colors[i], label=f"{labels[i].format(i)}")
+        ax.plot(x, y_fit, '-', c=colors[i], label=r"$\beta$ = {:.2f}".format(param[0]))
+        
+    # Add labels and legend
+    ax.set_xlabel('Rank/K')
+    ax.set_ylabel('Eigenvalues')
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_title("Scaling of largest eigenvalues")
+    ax.legend()
+
+    if fig_dir != None:
+        filename = Path(fig_dir) / "scaling_{}_largest_eigenvalues".format(n)
+        plt.savefig(filename, dpi=300, bbox_inches="tight")
+
+    return params, pcovs
 
 
 def plot_free_energy_scaling(
