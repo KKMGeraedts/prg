@@ -327,90 +327,72 @@ def plot_eigenvalue_spectra_within_clusters(
     if return_data:
         return ranks, means, confidence_intervals_l
 
-    
-def plot_free_energy_scaling(p_averages, p_confidence_intervals, unique_activity_values, clusters, ax=None):
+
+def plot_free_energy_scaling(
+    Xs: List[List],
+    skip_iters: int = 2, 
+    ax: plt.Axes = None,
+    label: str = "", 
+    color: str = "black",
+    show_exponential_decay: bool = True,
+):
     """
-    When a RG transformation is exact the free energy does not change. This function compute the free energy at each
-    coarse-grained step and log plots the values. We hope to see some scaling with a power law close to 1.
+    Plot the free energy scaling given a list of PRG activity. Skip a few of the first iterations if 'skip_iters' is specified
+    and if only a sinle cluster size has a free energy let the user know.
 
-    We can compute the free energy by F = -np.ln(p0) with p0 the probability that a cluster is silent.
-
-    Parameters:
-        X_list - nd numpy array containing the variables at different steps of the coarse-graining
+    :param Xs: list of activity
+    :param skip_iters: number iterations to skip
+    :param ax: Axes to plot on
+    :param label: label for the plot
+    :param color: color for the plot
+    :param show_exponential_decay: if true show scaling of exponential decay (\beta=1)
     """
-    if ax == None:
-        fig, ax = plt.subplots(1, 1)
-
-    # Data
-    p0_avg = []
-    p0_confidence_intervals = []
-    cluster_sizes = [1]
-    cluster_sizes += [len(c[0]) for c in clusters[1:]]
-    never_silent_clusters = [] # To keep track at which sizes clusters are never silent
-    popped = 0
-
-    # # 100% and 0% correlation limits
-    # idx = np.argwhere(unique_activity_values[0] == 0.0)
-    # limit100 = list(list(p_averages[0][idx])[0]) * len(unique_activity_values)
-    # limit0 = (limit100) ** np.arange(1, len(unique_activity_values)+1)
-
-    for i, unique_vals in enumerate(unique_activity_values):
-        # Find idx at which cluster is silent
-        idx = np.argwhere(unique_vals == 0.0)
-        # Check it exists
-        if len(idx) != 0:
-            idx = idx[0]
-            
-            # Add to list
-            p0_avg.append(list(p_averages[i][idx])[0])
-            p0_confidence_intervals.append([p_confidence_intervals[i][idx][0][0], p_confidence_intervals[i][idx][0][1]])
-        else:
-            never_silent_clusters.append(cluster_sizes[i-popped])
-            cluster_sizes.pop(i - popped)
-            popped += 1
-
-    # print(limit0)
-            
-    # # Plot limits
-    # plt.plot(cluster_sizes, limit0, "--", alpha=0.5, label="0% correlation")
-    # plt.plot(cluster_sizes, limit100, "--", alpha=0.5, label="100% correlation")
-
-    # Check that clusters are silent
-    if cluster_sizes == []:
-        print("Cannot plot free energy. Clusters are never silent.")
-        plt.close()
-        return
-    elif never_silent_clusters != []:
-        print(f"Clusters with following sizes are never silent: {never_silent_clusters}")
-    
-    # Free energy from probability of silence
-    p0_avg = -np.log(p0_avg)
-    p0_confidence_intervals = -np.log(p0_confidence_intervals)
+    # Compute free energy
+    free_energies, cluster_sizes = compute_free_energies(Xs, skip_iters)
+    if len(free_energies) < 2:
+        print("Clusters are only silent at size K = [{}]. Can not fit a power law for {}".format(cluster_sizes, label))
+        return -1
     
     # Fit power law
-    params, pcov = fit_power_law(cluster_sizes, p0_avg)
-    print(f"Parameters of power law fit for free energy: {params}")
-    
-    # Plot fit
-    ax.plot(
-        cluster_sizes,
-        power_law(cluster_sizes, params[0], params[1]), 
-        "--", 
-        c="gray", 
-        alpha=0.5, 
-        label=f"power law fit: $\\alpha$={params[0]:.2f}"
-        )
+    params, pcov = fit_power_law(cluster_sizes, free_energies)
+    free_energies_fit = power_law(cluster_sizes, *params)
 
-    # Plot the probability of the cluster being silent
-    p0_confidence_intervals = np.abs(np.transpose(p0_confidence_intervals) - p0_avg)  
-    ax.errorbar(cluster_sizes, p0_avg, yerr=p0_confidence_intervals, color="black", fmt="o", markersize=5)
+    # Plot
+    if ax == None:
+        fig, ax = plt.subplots(1, 1, figsize=(6, 5))
+    ax.plot(cluster_sizes, free_energies, "o", color=color, markersize=5, label=label)
+    ax.plot(cluster_sizes, free_energies_fit, "-", color=color, label=r"$\beta$ = {:.2f}".format(params[0]))
+    if show_exponential_decay:
+        ax.plot(cluster_sizes, cluster_sizes, "--", color="gray", label=r"$\beta$ = 1") # Exponential decay
     ax.set_xlabel("Cluster size")
-    ax.set_ylabel(r"-log P$_{Silence}$")
-    #ax.set_ylim(0, max(p0_avg)+0.1)
-    plt.yscale("log")
-    plt.xscale("log")
-    #plt.ylim(0, 1)
-    plt.legend()
+    ax.set_ylabel(r"-ln($P_0$)")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    if label != "":
+        ax.legend()
+
+def compute_free_energies(Xs: List[List], skip_iters: int = 2) -> List[np.ndarray]:
+    """
+    Given a list of PRG activity compute the free energies at each iteration for each cluster. 
+    Skip the first 'skip_iters' iterations as these can be noisy.
+
+    :param Xs: input activity
+    :param skip_iters: prg iterations to skip
+
+    :return free_energies: list of free energies
+    """
+    free_energies = []
+    cluster_sizes = []
+    for i, x in enumerate(Xs[skip_iters:]):
+        values, counts = np.unique(x, return_counts=True)
+        zero_idx = np.argwhere(values == 0)
+        probablity_zero = counts[zero_idx] / np.sum(counts)
+        if len(zero_idx.reshape(-1)) != 0:
+            free_energy = - np.log(probablity_zero)
+            free_energies.append(free_energy.reshape(-1)[0])
+            cluster_sizes.append(2**(skip_iters + i))
+    return free_energies, cluster_sizes
+
 
 def scaling_moments_data(
     Xs: List[List],
