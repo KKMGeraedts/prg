@@ -4,11 +4,7 @@ from typing import List, Tuple
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.colors as mcolors
-from matplotlib.lines import Line2D
-from matplotlib.axes._axes import Axes
-import scipy.odr as odr
-from scipy.stats import binom
+from scipy.stats import rv_discrete, norm
 from scipy.optimize import curve_fit
 from scipy.stats import moment as sp_moment
 
@@ -60,6 +56,49 @@ def projection(x, k, u):
     #x_proj = x_proj / np.std(x_proj)
     
     return x_proj
+
+def plot_realspace_distributions(
+    Xs: List[List],
+    max_iter:int = 6,
+    ax: plt.Axes = None
+):
+    """
+    Plot the activity distribution of the normalized activity at each iteration of the PRG.
+
+    :param Xs: list of activity
+    :param max_iter: only show the acitivity up to this iteration
+    :param ax: plt.Axes object for plotting
+    """
+
+    if ax == None:
+       fig, ax = plt.subplots(1, 1, figsize=(7, 5))
+
+    for i, x in enumerate(Xs):
+        if i > max_iter:
+            continue
+        K = 2 ** i 
+        x = x.reshape(-1)
+
+        # Hist data
+        bins, edges = np.histogram(x, bins=1000)
+        bins = bins / np.sum(bins)
+        edges = (edges[:-1] + np.roll(edges, 1)[1:]) / 2
+    
+        # Create custom pdf
+        pdf = rv_discrete(values=(edges, bins))
+        ax.plot(edges, pdf.pmf(edges), "-", label="K = {}".format(K))
+
+        y_norm = norm.pdf(edges) * (np.max(bins) / np.max(norm.pdf(edges)))
+        if i == 0:
+            ax.plot(edges, y_norm, "--", color="gray", label="N(0, 1)")
+        else:
+            ax.plot(edges, y_norm, "--", color="gray")
+
+    ax.set_xlabel("Normalized activity")
+    ax.set_ylabel("Probability")
+    ax.set_yscale("log")
+    ax.set_ylim([1e-8, 1e-2])
+    ax.legend()
 
 
 def plot_momentumspace_distribution(x: List[float] , ax: plt.Axes = None):
@@ -115,7 +154,7 @@ def plot_momentumspace_distribution(x: List[float] , ax: plt.Axes = None):
         ax.legend()
 
 
-def show_clusters_by_imshow(clusters: List, rg_range: tuple = (0,0)):
+def show_clusters_by_imshow(clusters: List, rg_range: Tuple = (0,0)):
     """
     Show the clusters that are formed during the RG procedure.
 
@@ -163,7 +202,7 @@ def show_clusters_by_imshow(clusters: List, rg_range: tuple = (0,0)):
 def plot_eigenvalue_scaling(
         X_coarse: List,
         clusters: List,
-        rg_range: tuple = (0,0), 
+        rg_range: Tuple = (0,0), 
         ax: plt.Axes = None, 
         return_data: bool = False
         ):
@@ -248,7 +287,7 @@ def plot_n_largest_eigenvectors(Xs, n, rg_range=(0,0)):
 def plot_eigenvalue_spectra_within_clusters(
         Xs: List, 
         clusters: List, 
-        rg_range: tuple = (0,0), 
+        rg_range: Tuple = (0,0), 
         ax: plt.Axes = None,
         return_data: bool = False,
         ):
