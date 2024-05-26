@@ -334,6 +334,8 @@ def fit_largest_eigenvalues(
         means: List,
         n: int = 2,
         rg_range_len: int = 4,
+        label: str = "", 
+        fmt: str = ".",
         ax: plt.Axes = None,
         fig_dir: str = None,
 ):
@@ -346,9 +348,9 @@ def fit_largest_eigenvalues(
     :param n: number of eigenvalues to fit
     :param rg_range_len: PRG iterations
     """
-    # Store two largest eigenvectors at each iteration in a separate list
-    eigenvalues = np.empty(shape=(2, rg_range_len))
-    new_ranks = np.empty(shape=(2, rg_range_len))
+    # Store n largest eigenvectors at each iteration in a separate list
+    eigenvalues = np.empty(shape=(n, rg_range_len))
+    new_ranks = np.empty(shape=(n, rg_range_len))
     for i, mean in enumerate(means):
         eigenvalues[:, i] = mean[:n]
         new_ranks[:, i] = ranks[i][:n]
@@ -358,12 +360,11 @@ def fit_largest_eigenvalues(
     
     # Fit power laws to the eigenvalues
     colors = ["C{}".format(i) for i in range(rg_range_len)]
-    labels = [r"$\lambda_{}$"] * rg_range_len
 
     params = []
     pcovs = []
-    for i, row in enumerate(eigenvalues[:rg_range_len]):
-        # Fit a power law to the current row
+    for i in range(n):
+        row = eigenvalues[i]
         x = new_ranks[i]
         param, pcov = fit_power_law(x, row)
         params.append(param)
@@ -371,8 +372,11 @@ def fit_largest_eigenvalues(
         y_fit = power_law(x, *param)
         
         # Plot the actual values and their power law fit
-        ax.plot(x, row, ".", c=colors[i], label=f"{labels[i].format(i)}")
-        ax.plot(x, y_fit, '-', c=colors[i], label=r"$\beta$ = {:.2f}".format(param[0]))
+        if i == 0:
+            ax.plot(x, row, fmt, c=colors[i], label=label)
+        else:
+            ax.plot(x, row, fmt, c=colors[i])
+        ax.plot(x, y_fit, '-', c=colors[i], label=r"$\beta_{}$ = {:.2f}".format(i, param[0]))
         
     # Add labels and legend
     ax.set_xlabel('Rank/K')
