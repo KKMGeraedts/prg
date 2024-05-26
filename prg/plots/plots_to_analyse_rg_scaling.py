@@ -30,80 +30,132 @@ def fit_power_law(x, y):
     params, pcov = curve_fit(power_law, x, y, p0=p0)
     return params, pcov
 
-# def fit_power_law2(x, y):
-#     # Create a model for fitting.
-#     power_law_model = odr.Model(lambda p, x: power_law(x, *p))
-#     
-#     # Create a RealData object using your initiated data.
-#     data = odr.RealData(x, y)
-#     
-#     # Set up ODR with the model and data.
-#     odr_obj = odr.ODR(data, power_law_model, beta0=[y[0], 1.])
-#     
-#     # Run the regression.
-#     out = odr_obj.run()
-#     
-#     # Use the in-built pprint method to give us results.
-#     #out.pprint()
-# 
-#     # Extract the parameters:
-#     return out.beta
-
-def plot_normalized_activity(
-        p_averages: List[np.ndarray], 
-        p_confidence_intervals: List[np.ndarray], 
-        unique_activity_values: List[np.ndarray], 
-        clusters: np.ndarray, 
-        rg_range: Tuple[int, int] = (0,0), 
-        title: str = "", 
-        binom_fit: bool = False, 
-        ax: Axes = None
-        ):
+def projection(x, k, u):
     """
-    Plots the distribution of the normalized activity. Given the average probabilities, standard deviations and the unique values at each
-    step of the coarse-graining. This data can be obtained from the RG_class.
-
+    Project the data x onto its k largest principal components. 
+    
     Parameters:
-        p_averages - a list of size = n_rg_iterations with each list containing an numpy array of the average activity across all clusters
-        p_confidence_intervals - a list of size = n_rg_iterations with each item containing a list of upper and lower values for 95% confidence interval
-        unique_activity_values - a list of size = n_rg_iterations with each list containing an numpy array of the unique activity values in the clusters
+        x - data to project
+        k - number of eigenmodes to keep
+        u - Eigenvectors x ordered from largest to smallest
     """
-    cluster_sizes = [1] + [len(c[0]) for c in clusters[1:]]
+    # Check that k is smaller than the number of eigenvectors
+    if k > len(u):
+        print(f"k ({k}) is larger than the number of eigenvectors ({len(u)}). Returning x.")
+        return x
+    elif k == len(u):
+        return x
+    
+    # Keep k largest eigenvectors
+    if k >= 0:
+        u_subset = u[:, :k]
+    else:
+        u_subset = u[:, -k:]
+        
+    P = u_subset @ u_subset.T
+    
+    # Project x
+    x_proj = P @ (x)# - np.mean(x, axis=0))
+    #x_proj = x_proj / np.std(x_proj)
+    
+    return x_proj
 
-    # Create fig, ax
+
+def plot_realspace_distributions(
+    Xs: List[List],
+    max_iter:int = 6,
+    ax: plt.Axes = None
+):
+    """
+    Plot the activity distribution of the normalized activity at each iteration of the PRG.
+
+    :param Xs: list of activity
+    :param max_iter: only show the acitivity up to this iteration
+    :param ax: plt.Axes object for plotting
+    """
+
     if ax == None:
-        fig, ax = plt.subplots(1, 1)
+        fig, ax = plt.subplots(1, 1, figsize=(7, 5))
+
+    for i, x in enumerate(Xs):
+        if i > max_iter:
+            continue
+        K = 2 ** i 
+        x = x.reshape(-1)
+
+        # Hist data
+        bins, edges = np.histogram(x, bins=1000)
+        bins = bins / np.sum(bins)
+        edges = (edges[:-1] + np.roll(edges, 1)[1:]) / 2
     
-    if rg_range != (0,0):
-        cluster_sizes = cluster_sizes[rg_range[0]:rg_range[1]]
-        p_averages = p_averages[rg_range[0]:rg_range[1]]
-        p_confidence_intervals = p_confidence_intervals[rg_range[0]:rg_range[1]]
-        unique_activity_values = unique_activity_values[rg_range[0]:rg_range[1]]
-        clusters = clusters[rg_range[0]:rg_range[1]]
+        # Create custom pdf
+        pdf = rv_discrete(values=(edges, bins))
+        ax.plot(edges, pdf.pmf(edges), "-", label="K = {}".format(K))
 
-    for i, _ in enumerate(p_averages):
-        p_confidence_interval = np.abs(p_confidence_intervals[i].T - p_averages[i])
-        ax.errorbar(unique_activity_values[i], p_averages[i], yerr=np.array(p_confidence_interval), fmt="o--", linewidth=1, markersize=3, label=f"K = {cluster_sizes[i]}")
-        
-        # Binomial distribution
-        if binom_fit == True:
-            n_trails = cluster_sizes[i]
-            p = 0.5
-            x = np.arange(binom.ppf(0.01, n_trails, p), binom.ppf(1	, n_trails, p)+1)
-            binom_pdf = binom.pmf(x, n_trails, p)
+        y_norm = norm.pdf(edges) * (np.max(bins) / np.max(norm.pdf(edges)))
+        if i == 0:
+            ax.plot(edges, y_norm, "--", color="gray", label="N(0, 1)")
+        else:
+            ax.plot(edges, y_norm, "--", color="gray")
 
-            # Plot binomail 
-            ax.plot(x / n_trails, binom_pdf, '--', color="grey", alpha=0.3)
-        
-    # Make plot nice
-    ax.set_ylabel("Probability")
     ax.set_xlabel("Normalized activity")
-    #ax.set_title("Probability distribution of the normalized activity")
-    ax.grid(True)
-    
-    ax.legend(loc="upper right", ncol=2)
+    ax.set_ylabel("Probability")
     ax.set_yscale("log")
-    #ax.set_ylim(0, 0.8)
+    ax.set_ylim([1e-8, 1e-2])
+    ax.legend()
+
+
+def plot_momentumspace_distribution(x: List[float] , ax: plt.Axes = None):
+    """
+	Plot the activity distribution in momentum space RG.
+
+    :param X: input dataset
+    :param ax: plt.Axes object for plotting.
+	"""
+    if ax == None:
+        fig, ax = plt.subplots(1, 1, figsize=(7, 6))
+        
+    cluster_size = len(x)
+    print(f"Cluster size: {cluster_size}")
+    
+	# Fraction of modes to keep
+    modes_list = [2, 16, 32, 64, 128, 256]
+	
+	# Plot different K with a gradient in color
+    alphas = np.logspace(-1, 0, len(modes_list))    
+    for i, n_mode in enumerate(modes_list):
+        x_proj = np.empty(x.shape)
+        print(f"Modes kept: {int(cluster_size / n_mode)}")
+
+        # Compute the correlation matrix
+        c = np.cov(x)
+
+        # Compute the eigenspectrum
+        eigvals, eigvecs = np.linalg.eigh(c)
+        eigvals = eigvals[::-1]
+        eigvecs = eigvecs[:, ::-1]
+
+        # Project on subspace
+        k = int(cluster_size / n_mode)
+        x_proj = projection(x, k, eigvecs)
+
+        # Percentage of variance kept
+        variance_proj = 100 * np.sum(eigvals[:k]) / np.sum(eigvals)
+
+        # Plot activity distribution
+		#NOTE: bins should not be much larger than 10% of the number of spins
+        bins, edges = np.histogram(x_proj.reshape(-1), bins=100, density=True)
+        edge_centers = (edges[:-1] + np.roll(edges, -1)[:-1]) / 2
+        bin_size = edges[1] - edges[0]
+
+		# Normalize the bins
+        bins *= bin_size
+
+        ax.plot(edge_centers, bins, "o--", markersize=3, c=u"#348ABD", alpha=alphas[i], label=f'N/{n_mode}')
+        ax.set_yscale("log")
+        ax.set_xlabel("Normalized activity", fontsize=30)
+        ax.set_ylabel("Probability", fontsize=30)
+        ax.legend()
 
 
 def show_clusters_by_imshow(clusters: List, rg_range: tuple = (0,0)):
