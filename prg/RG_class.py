@@ -30,13 +30,13 @@ class PRG():
 
         """
         if method == "file":
-            self.X = read_input(input_file)
-            self.X = check_dataset(self.X.T)
+            self.X = read_input(input_file).T
+            # self.X = check_dataset(self.X)
             if len(np.unique(self.X)) == 2:
                 self._normalize = False
         elif method == "data":
-            self.X = input_file
-            self.X = check_dataset(self.X.T)
+            self.X = input_file.T
+            # self.X = check_dataset(self.X)
             if len(np.unique(self.X)) == 2:
                 self._normalize = False
         else: 
