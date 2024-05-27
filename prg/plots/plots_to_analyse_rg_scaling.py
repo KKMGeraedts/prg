@@ -8,6 +8,8 @@ from scipy.stats import rv_discrete, norm
 from scipy.optimize import curve_fit
 from scipy.stats import moment as sp_moment
 
+def linear_func(log_x, log_a, b):
+    return log_a + b * log_x
 
 # Power law function
 def power_law(x, b, a):
@@ -97,7 +99,6 @@ def plot_realspace_distributions(
     ax.set_xlabel("Normalized activity")
     ax.set_ylabel("Probability")
     ax.set_yscale("log")
-    ax.set_ylim([1e-8, 1e-2])
     ax.legend()
 
 
@@ -561,18 +562,20 @@ def scaling_moments_data(
                 ax.axhline(mean + confidence_intervals[i][1], linestyle="--", label="CI upper")
             ax.legend()
             plt.show()
-            
-        params, pcov = fit_power_law_fixed_a(cluster_sizes, means)
-        params = list(params) + [means[0]] # (b, a)
 
-    return cluster_sizes, means, confidence_intervals, params, pcov
+    log_x = np.log10(cluster_sizes)
+    log_y = np.log10(means)
+    params, pcov = curve_fit(linear_func, log_x, log_y)
+    params[0] = 10**params[0]
+    return cluster_sizes, means, confidence_intervals, params[::-1], pcov
+
 
 def plot_scaling_of_moment(
     Xs: List[List],
     clusters: List[List],
     moment: int = 2,
     ax: plt.Axes = None,
-    label: str = "",
+    label: str = "mean",
     color: str = "black",
     show_distributions: bool = False,
 ):
@@ -609,7 +612,7 @@ def plot_scaling_of_moment(
         power_law(cluster_sizes, params[0], params[1]), 
         "-", 
         c=color, 
-        label=r"$\alpha$ ({}): {:.2f}".format(label, params[0]),
+        label=r"$\beta$ ({}): {:.2f}".format(label, params[0]),
         )
 
     ax.set_xlabel("Cluster size K")
