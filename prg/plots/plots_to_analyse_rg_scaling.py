@@ -31,8 +31,8 @@ def fit_power_law(x, y):
 
 def projection(x, k, u):
     """
-    Project the data x onto its k largest principal components. 
-    
+    Project the data x onto its k largest principal components.
+
     Parameters:
         x - data to project
         k - number of eigenmodes to keep
@@ -44,19 +44,19 @@ def projection(x, k, u):
         return x
     elif k == len(u):
         return x
-    
+
     # Keep k largest eigenvectors
     if k >= 0:
         u_subset = u[:, :k]
     else:
         u_subset = u[:, -k:]
-        
+
     P = u_subset @ u_subset.T
-    
+
     # Project x
     x_proj = P @ (x)# - np.mean(x, axis=0))
     #x_proj = x_proj / np.std(x_proj)
-    
+
     return x_proj
 
 def plot_realspace_distributions(
@@ -78,14 +78,14 @@ def plot_realspace_distributions(
     for i, x in enumerate(Xs):
         if i > max_iter:
             continue
-        K = 2 ** i 
+        K = 2 ** i
         x = x.reshape(-1)
 
         # Hist data
         bins, edges = np.histogram(x, bins=1000)
         bins = bins / np.sum(bins)
         edges = (edges[:-1] + np.roll(edges, 1)[1:]) / 2
-    
+
         # Create custom pdf
         pdf = rv_discrete(values=(edges, bins))
         ax.plot(edges, pdf.pmf(edges), "-", label="K = {}".format(K))
@@ -104,30 +104,28 @@ def plot_realspace_distributions(
 
 def plot_momentumspace_distribution(x: List[float] , ax: plt.Axes = None):
     """
-	Plot the activity distribution in momentum space RG.
+    Plot the activity distribution in momentum space RG.
 
     :param X: input dataset
     :param ax: plt.Axes object for plotting.
-	"""
+        """
     if ax == None:
         fig, ax = plt.subplots(1, 1, figsize=(7, 6))
-        
+
     cluster_size = len(x)
     print(f"Cluster size: {cluster_size}")
-    
-	# Fraction of modes to keep
+
+    # Fraction of modes to keep
     modes_list = [2, 16, 32, 64, 128, 256]
-	
-	# Plot different K with a gradient in color
-    alphas = np.logspace(-1, 0, len(modes_list))    
+
+    # Plot different K with a gradient in color
+    alphas = np.logspace(-1, 0, len(modes_list))
     for i, n_mode in enumerate(modes_list):
         x_proj = np.empty(x.shape)
         print(f"Modes kept: {int(cluster_size / n_mode)}")
 
-        # Compute the correlation matrix
-        c = np.cov(x)
-
         # Compute the eigenspectrum
+        c = np.cov(x)
         eigvals, eigvecs = np.linalg.eigh(c)
         eigvals = eigvals[::-1]
         eigvecs = eigvecs[:, ::-1]
@@ -140,14 +138,11 @@ def plot_momentumspace_distribution(x: List[float] , ax: plt.Axes = None):
         variance_proj = 100 * np.sum(eigvals[:k]) / np.sum(eigvals)
 
         # Plot activity distribution
-		#NOTE: bins should not be much larger than 10% of the number of spins
+        #NOTE: bins should not be much larger than 10% of the number of spins
         bins, edges = np.histogram(x_proj.reshape(-1), bins=100, density=True)
         edge_centers = (edges[:-1] + np.roll(edges, -1)[:-1]) / 2
         bin_size = edges[1] - edges[0]
-
-		# Normalize the bins
         bins *= bin_size
-
         ax.plot(edge_centers, bins, "o--", markersize=3, c=u"#348ABD", alpha=alphas[i], label=f'N/{n_mode}')
         ax.set_yscale("log")
         ax.set_xlabel("Normalized activity", fontsize=30)
@@ -161,7 +156,7 @@ def show_clusters_by_imshow(clusters: List, rg_range: Tuple = (0,0)):
 
     Parameters:
         cluster - ndarray containing the clusters at the different iterations of the RG transformation
-        verbose (optional) - if True it prints the cluster list after showing the image 
+        verbose (optional) - if True it prints the cluster list after showing the image
     """
 
     original_size = len(clusters[0])
@@ -187,7 +182,7 @@ def show_clusters_by_imshow(clusters: List, rg_range: Tuple = (0,0)):
         for i, color in enumerate(colors):
             for j in c[i]:
                 grid[j, c[i]] = color
-        
+
         ax.imshow(grid, extent=(0, original_size, 0, original_size), origin="lower")
         ax.set_title(f"Cluster size = {len(c.T)}")
 
@@ -203,16 +198,16 @@ def show_clusters_by_imshow(clusters: List, rg_range: Tuple = (0,0)):
 def plot_eigenvalue_scaling(
         X_coarse: List,
         clusters: List,
-        rg_range: Tuple = (0,0), 
-        ax: plt.Axes = None, 
+        rg_range: Tuple = (0,0),
+        ax: plt.Axes = None,
         return_data: bool = False
         ):
     """
-    Plot the eigenvalues spectrum of the Pearson correlation matrix at different steps of 
+    Plot the eigenvalues spectrum of the Pearson correlation matrix at different steps of
     coarse graining.
 
     Parameters:
-        X_coarse - a list of arrays containing the activity of the orignal and coarse-grained variables. 
+        X_coarse - a list of arrays containing the activity of the orignal and coarse-grained variables.
     """
     # Create fig, ax
     if ax == None:
@@ -225,9 +220,9 @@ def plot_eigenvalue_scaling(
     if rg_range[0] == 0:
         cluster_sizes = [1]
         cluster_sizes += [len(c[0]) for c in clusters[1:]]
-    else: 
+    else:
         cluster_sizes = [len(c[0]) for c in clusters]
-        
+
     alphas = np.logspace(-1, 0, len(X_coarse))
     for i, X in enumerate(X_coarse):
         # Compute correlation matrix
@@ -258,7 +253,7 @@ def plot_n_largest_eigenvectors(Xs, n, rg_range=(0,0)):
     Plot the n largest eigenvectors in an imshow figure.
 
     Parameters:
-        X_coarse - a list of arrays containing the activity of the orignal and coarse-grained variables. 
+        X_coarse - a list of arrays containing the activity of the orignal and coarse-grained variables.
         n - number of eigenvectors to plot
     """
     N = len(Xs[0])
@@ -286,9 +281,9 @@ def plot_n_largest_eigenvectors(Xs, n, rg_range=(0,0)):
         plt.show()
 
 def plot_eigenvalue_spectra_within_clusters(
-        Xs: List, 
-        clusters: List, 
-        rg_range: Tuple = (0,0), 
+        Xs: List,
+        clusters: List,
+        rg_range: Tuple = (0,0),
         ax: plt.Axes = None,
         return_data: bool = False,
         ):
@@ -325,22 +320,22 @@ def plot_eigenvalue_spectra_within_clusters(
             cluster_size = len(cluster[0])
         except TypeError:
             continue
-        
+
         # Not interested in the spectra of these small clusters
         if cluster_size <= 1:
             continue
-            
+
         # Compute the spectrum for each cluster, average and plot with confidence interval
         eigvalues_l = []
         for c in cluster:
 
             if len(c) != cluster_size:
                 continue
-            
+
             corr = np.cov(original_dataset[c])
             eigvalues, _ = np.linalg.eigh(corr)
             eigvalues_l.append(np.sort(eigvalues)[::-1])
-         
+
         # Compute statistics
         rank = np.arange(1, len(eigvalues) + 1) / len(eigvalues)
         mean = np.mean(eigvalues_l, axis=0)
@@ -350,15 +345,15 @@ def plot_eigenvalue_spectra_within_clusters(
             mean - mean * np.power(10, -1 * stds  / (mean * len(eigvalues_l))),
             mean * np.power(10, stds / (mean * len(eigvalues_l))) - mean,
             ]
-        
+
         # Plot
         ax.errorbar(rank, mean, yerr=confidence_intervals, fmt="^", markersize=5, label=f"K = {cluster_size}")
 
-        # Store 
+        # Store
         ranks.append(rank)
         means.append(mean)
         confidence_intervals_l.append(confidence_intervals)
-                
+
     ax.set_xlabel("Rank/K")
     ax.set_ylabel("Eigenvalues")
     ax.set_yscale("log")
@@ -374,16 +369,16 @@ def fit_largest_eigenvalues(
         means: List,
         n: int = 2,
         rg_range_len: int = 4,
-        label: str = "", 
+        label: str = "",
         fmt: str = ".",
         ax: plt.Axes = None,
         fig_dir: str = None,
 ):
     """
-    Fit the eigenvalue to a power law based on their rank starting from the largest to lowest. 
+    Fit the eigenvalue to a power law based on their rank starting from the largest to lowest.
     A single eigenvalue is taken for each iteration of the PRG procedure.
 
-    :param ranks: list of the ranks for the eigenvalues 
+    :param ranks: list of the ranks for the eigenvalues
     :param means: list of the mean eigenvalue at each iteration
     :param n: number of eigenvalues to fit
     :param rg_range_len: PRG iterations
@@ -396,8 +391,8 @@ def fit_largest_eigenvalues(
         new_ranks[:, i] = ranks[i][:n]
 
     if ax == None:
-        fig, ax = plt.subplots(1, 1, figsize=(6, 5)) 
-    
+        fig, ax = plt.subplots(1, 1, figsize=(6, 5))
+
     # Fit power laws to the eigenvalues
     colors = ["C{}".format(i) for i in range(rg_range_len)]
 
@@ -410,14 +405,14 @@ def fit_largest_eigenvalues(
         params.append(param)
         pcovs.append(pcov)
         y_fit = power_law(x, *param)
-        
+
         # Plot the actual values and their power law fit
         if i == 0:
             ax.plot(x, row, fmt, c=colors[i], label=label)
         else:
             ax.plot(x, row, fmt, c=colors[i])
         ax.plot(x, y_fit, '-', c=colors[i], label=r"$\beta_{}$ = {:.2f}".format(i, param[0]))
-        
+
     # Add labels and legend
     ax.set_xlabel('Rank/K')
     ax.set_ylabel('Eigenvalues')
@@ -435,10 +430,11 @@ def fit_largest_eigenvalues(
 
 def plot_free_energy_scaling(
     Xs: List[List],
-    skip_iters: int = 2, 
+    skip_iters: int = 2,
     ax: plt.Axes = None,
-    label: str = "", 
+    label: str = "",
     color: str = "black",
+    return_params: bool = False,
     show_exponential_decay: bool = True,
 ):
     """
@@ -457,9 +453,14 @@ def plot_free_energy_scaling(
     if len(free_energies) < 2:
         print("Clusters are only silent at size K = [{}]. Can not fit a power law for {}".format(cluster_sizes, label))
         return -1
-    
+
     # Fit power law
-    params, pcov = fit_power_law(cluster_sizes, free_energies)
+    log_x = np.log10(cluster_sizes)
+    log_y = np.log10(free_energies)
+    params, pcov = curve_fit(linear_func, log_x, log_y)
+    params[0] = 10**params[0]
+    params = params[::-1]
+    # params, pcov = fit_power_law(cluster_sizes, free_energies)
     free_energies_fit = power_law(cluster_sizes, *params)
 
     # Plot
@@ -468,7 +469,13 @@ def plot_free_energy_scaling(
     ax.plot(cluster_sizes, free_energies, "o", color=color, markersize=5, label=label)
     ax.plot(cluster_sizes, free_energies_fit, "-", color=color, label=r"$\beta$ = {:.2f}".format(params[0]))
     if show_exponential_decay:
-        ax.plot(cluster_sizes, cluster_sizes, "--", color="gray", label=r"$\beta$ = 1") # Exponential decay
+        ax.plot( # Exponential decay
+            cluster_sizes,
+            free_energies[0] * np.array(cluster_sizes),
+            "--",
+            color="gray",
+            label=r"$\beta$ = 1"
+            )
     ax.set_xlabel("Cluster size")
     ax.set_ylabel(r"-ln($P_0$)")
     ax.set_xscale("log")
@@ -476,9 +483,12 @@ def plot_free_energy_scaling(
     if label != "":
         ax.legend()
 
+    if return_params:
+        return params, pcov
+
 def compute_free_energies(Xs: List[List], skip_iters: int = 2) -> List[np.ndarray]:
     """
-    Given a list of PRG activity compute the free energies at each iteration for each cluster. 
+    Given a list of PRG activity compute the free energies at each iteration for each cluster.
     Skip the first 'skip_iters' iterations as these can be noisy.
 
     :param Xs: input activity
@@ -522,9 +532,11 @@ def scaling_moments_data(
     means = []
     cluster_sizes = []
     confidence_intervals = np.empty(shape=(len(Xs), 2))
-
     for i, X in enumerate(Xs):
-        cluster_size = len(clusters[0]) / len(clusters[i])
+        try:
+            cluster_size = len(clusters[i][0])
+        except TypeError:
+            cluster_size = 1
         cluster_sizes.append(cluster_size)
         X = X * cluster_size
 
@@ -532,10 +544,10 @@ def scaling_moments_data(
             moments = np.abs(sp_moment(X, moment=moment, axis=1))
         else:
             moments = sp_moment(X, moment=moment, axis=1)
-        
+
         mean = moments.mean()
         means.append(mean)
-        
+
         confidence_intervals[i] = [
             mean - mean * np.power(10, -1 * moments.std() / (mean * np.sqrt(len(moments)))),
             mean * np.power(10, moments.std() / (mean * np.sqrt(len(moments)))) - mean,
@@ -552,7 +564,7 @@ def scaling_moments_data(
                 np.power(10, moments.std() / (mean * np.sqrt(len(moments)))),
                 confidence_intervals[i]
             )
-            
+
             fig, ax = plt.subplots(1, 1, figsize=(6, 5))
             ax.plot(range(len(moments)), moments, ".")
             ax.set_ylabel(f"Mean of {moment}-moment")
@@ -599,19 +611,30 @@ def plot_scaling_of_moment(
         label=label
     )
 
-    # Plot zero correlation limit
-    limitK1 = params[1] * np.array(cluster_sizes)
-    ax.plot(cluster_sizes, limitK1, "--", color="gray", alpha=0.5)
 
-    # Plot maximum correlation limit
-    limitK2 = params[1] * np.array(cluster_sizes) ** moment
-    ax.plot(cluster_sizes, limitK2, "--", color="gray", alpha=0.5)
+    if cluster_sizes[0] == 1:
+        # Plot zero correlation limit
+        limitK1 = params[1] * np.array(cluster_sizes)
+        ax.plot(cluster_sizes, limitK1, "--", color="gray", alpha=0.5)
+
+        # Plot maximum correlation limit
+        limitK2 = params[1] * np.array(cluster_sizes) ** moment
+        ax.plot(cluster_sizes, limitK2, "--", color="gray", alpha=0.5)
+    else:
+        # Plot zero correlation limit
+        limitK1 = means[0] * (np.array(cluster_sizes) / cluster_sizes[0])
+        ax.plot(cluster_sizes, limitK1, "--", color="gray", alpha=0.5)
+
+        # Plot maximum correlation limit
+        limitK2 = means[0] * (np.array(cluster_sizes) / cluster_sizes[0]) ** moment
+        ax.plot(cluster_sizes, limitK2, "--", color="gray", alpha=0.5)
+
 
     ax.plot(
         cluster_sizes,
-        power_law(cluster_sizes, params[0], params[1]), 
-        "-", 
-        c=color, 
+        power_law(cluster_sizes, params[0], params[1]),
+        "-",
+        c=color,
         label=r"$\beta$ ({}): {:.2f}".format(label, params[0]),
         )
 
