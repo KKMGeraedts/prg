@@ -1,4 +1,6 @@
+import warnings
 from typing import List
+
 import numpy as np
 import pandas as pd
 
@@ -18,11 +20,14 @@ def real_space_rg(X, steps, test=False):
             return np.array(X_list), np.array(clusters_list), np.array(coupling_parameters)
 
         # Compute correlation
-        correlation = np.corrcoef(X_coarse)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            correlation = np.corrcoef(X_coarse)
+        correlation[np.isnan(correlation)] = 0
 
         # RG iteration
         X_coarse, pairings = real_space_rg_iteration(X_coarse, correlation, test=test)
-        
+
         # Save data
         X_list.append(X_coarse)
 
@@ -34,8 +39,8 @@ def real_space_rg(X, steps, test=False):
 
 def real_space_rg_iteration(X, correlation, test=False):
     """
-    Perform a single RG iteration. Given the dataset X and its correlation matrix we greedily pair the 
-    highest correlated pairs with each other. 
+    Perform a single RG iteration. Given the dataset X and its correlation matrix we greedily pair the
+    highest correlated pairs with each other.
 
     Parameters:
         X - 2d np array containing the data
@@ -44,7 +49,7 @@ def real_space_rg_iteration(X, correlation, test=False):
 
     Return:
         X_coarse - the coarse grained variables. Size = [len(X)/2, len(X)/2]
-        pairings - list of indices that were paired. 
+        pairings - list of indices that were paired.
     """
     # Initialize
     X_coarse = np.zeros((X.shape[0]//2, X.shape[1]))
@@ -80,7 +85,15 @@ def real_space_rg_iteration(X, correlation, test=False):
         max_j_original = list_of_original_indices[1][max_j]
 
         pairings.append([max_i_original, max_j_original])
-        list_of_original_indices = np.delete(list_of_original_indices, [max_i, max_j, max_i + len(list_of_original_indices[0]), max_j + len(list_of_original_indices[0])])
+        list_of_original_indices = np.delete(
+            list_of_original_indices,
+            [
+                max_i,
+                max_j,
+                max_i + len(list_of_original_indices[0]),
+                max_j + len(list_of_original_indices[0])
+            ]
+        )
 
         # np.delete reshapes the array, we dont want this so undo it
         if len(list_of_original_indices) != 0:
@@ -90,8 +103,8 @@ def real_space_rg_iteration(X, correlation, test=False):
 
         # Merge pair in dataset also
         X_coarse[i] = (X[max_i_original] + X[max_j_original]) / 2
-        
-        # Keep degrees of freedom of the coarse-grained variable the same. 
+
+        # Keep degrees of freedom of the coarse-grained variable the same.
         # basis = np.unique(X[max_i_original])
         # mask = np.isin(X_coarse[i], basis, invert=True)
         # X_coarse[i][mask] = np.random.choice(basis, size=(np.sum(mask)))
@@ -116,7 +129,7 @@ def add_to_clusters(clusters, pairings):
         pairing - pairings of variables found at a RG iteration
 
     Return:
-        clusters - 2darray containing new clusters. 
+        clusters - 2darray containing new clusters.
     """
     # First RG iteration
     if len(clusters) == 0:
@@ -131,8 +144,7 @@ def add_to_clusters(clusters, pairings):
             new_cluster = np.array([clusters[pair[0]], clusters[pair[1]]])
         else:
             print("Found a pair with length > 2. Something went wrong.")
-       
+
         # Reshape clusters so it stays a 2d array
         new_clusters.append(new_cluster.reshape(-1))
     return new_clusters
-    
